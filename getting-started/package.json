@@ -1,0 +1,31 @@
+{
+  "name": "getting-started",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_OPTIONS='--inspect=9239' next dev -p 3005",
+    "build": "next build",
+    "start": "next start -p 3005",
+    "lint": "next lint",
+    "fdlgen": "npx causalc --token d53b4f107205475df88dc807 --environment 79f51299-1626-4f1f-ab6c-b7b40753f3af --typescript causal.ts causal.fdl"
+  },
+  "dependencies": {
+    "cookies": "^0.8.0",
+    "cross-fetch": "^3.1.5",
+    "next": "^12.1.6",
+    "react": "17.0.2",
+    "react-cookies": "^0.1.1",
+    "react-dom": "17.0.2",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@causal/compiler": "^0.20.0",
+    "@types/cookies": "^0.7.7",
+    "@types/react": "17.0.24",
+    "@types/react-cookies": "^0.1.0",
+    "@types/uuid": "^8.3.1",
+    "eslint": "7.32.0",
+    "eslint-config-next": "11.1.2",
+    "typescript": "4.4.3"
+  }
+}

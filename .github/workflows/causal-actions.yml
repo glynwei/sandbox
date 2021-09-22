@@ -1,0 +1,23 @@
+name: Update Causal
+on:
+  push:
+    paths:
+      ## only run if the FDL file has changed (or this file)
+      - getting-started/causal.fdl
+      - .github/workflows/causal-actions.yml
+    branches:
+      ## only care if it was changed on a branch related to an environment
+      - main
+
+jobs:
+  Update-Main:
+    runs-on: ubuntu-20.04
+    steps:
+      ## grab the FDL file for the commit
+      - run: |
+          wget --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          https://raw.githubusercontent.com/GITHUB_OWNER/GITHUB_REPO/${{ github.sha }}/getting-started/causal.fdl -O /tmp/causal.fdl
+      ## push the FDL file to Causal
+      - run: |
+          wget --content-on-error -O- --header='Content-Type:text/plain' --post-file /tmp/causal.fdl \
+          'https://tools.causallabs.io/fdlpush?token=${{ secrets.CAUSAL_TOKEN }}&env=ENV_ID'

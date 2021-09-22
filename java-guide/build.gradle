@@ -1,0 +1,79 @@
+
+plugins {
+    id 'java'
+}
+
+configurations {
+    // the iserver configuration will be used to launch an impression server with our plugin
+    iserver
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    // the runtime and iserver jars come from here
+    maven { url 'https://maven.causallabs.io' }
+}
+
+dependencies
+{
+    implementation 'io.causallabs:runtime:0.20.0'
+    iserver 'io.causallabs:iserver:0.20.0'
+    testImplementation'org.testng:testng:7.0.0'
+}
+
+
+// generate the java source for the Causal Java API and plugin
+// you can install the causal compiler using:
+//    npm install --global @causal/compiler@latest
+task generateFdlSource(type: Exec) {
+    commandLine 'causalc', '--java', 'build/generated/fdl', 'example.fdl'
+}
+compileJava.dependsOn(generateFdlSource)
+
+// Include the Causal generated code in the build
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/fdl'
+        }
+    }
+}
+
+// package everything up as a fat jar so that our jar can run with it's dependencies inside the impression server
+task fatJar(type: Jar) {
+    archiveBaseName = 'example-plugin'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.findAll 
+        { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    with jar
+}
+fatJar.dependsOn(jar)
+
+// start the impression server with the plugin, and our local FDL (overriding what is in the environment).
+//  To start with a debugger:
+// ./gradlew iserver --debug-jvm 
+// and then attach
+task iserver(type: JavaExec) {
+    classpath configurations.iserver
+    main = 'io.causallabs.iserver.ImpressionServer'
+    // --no-log means don't write any data to the weblogs or tools ui. Useful for debugging, and not generating real data
+    // --fdl means replace the FDL stored in the cloud on the environment with the local file. Useful to experiment with changes before checking them in
+    // NOTE: The tokens are for Causal's throwaway sandbox environment. You should replace the values for --environment and --token with your own.
+    args "--no-log", "--environment", "79f51299-1626-4f1f-ab6c-b7b40753f3af", "--token", "d53b4f107205475df88dc807", "--fdl", "example.fdl", "--plugin", fatJar.archivePath
+
+}
+iserver.dependsOn(fatJar)
+
+// We highly recommend writing unit tests that don't necessarily need to be running inside the
+// impression server in order to debug your plugin. 
+//
+// However, this example shows you how to run your plugin inside an impression server locally so 
+// you can step through your code as it is running inside a real server.
+// 
+// Therefore, the impression server needs to be running before these tests will succeed.
+// You can do that with './gradlew iserver' or './gradlew iserver --debug-jvm'
+test {
+    useTestNG()
+}

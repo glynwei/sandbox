@@ -1,0 +1,9 @@
+task default: %w[generate_code]
+
+task :generate_code do
+  sh 'causalc --ruby lib/causal.rb lib/example.fdl'
+end
+
+task :install_causal do
+  sh 'sudo npm i --location=global @causal/compiler@latest'
+end

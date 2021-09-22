@@ -1,0 +1,35 @@
+{
+  "name": "ssr-cache-stats",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "fdlgen": "npx causalc --typescript causal.ts ../getting-started/causal.fdl",
+    "fdlgen:local": "$CAUSALC --typescript causal.ts ../getting-started/causal.fdl",
+    "dev": "NODE_OPTIONS='--inspect=9230' next dev -p 8080",
+    "build": "next build",
+    "start": "next start -p 8080",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@causal/compiler": "^0.19.1",
+    "cookies": "^0.8.0",
+    "cross-fetch": "^3.1.4",
+    "next": "12.2.5",
+    "react": "18.2.0",
+    "react-cookies": "^0.1.1",
+    "react-dom": "18.2.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/cookies": "^0.7.7",
+    "@types/node": "18.7.14",
+    "@types/react": "18.0.18",
+    "@types/react-cookies": "^0.1.0",
+    "@types/react-dom": "18.0.6",
+    "@types/uuid": "^8.3.1",
+    "cypress": "^10.7.0",
+    "eslint": "8.23.0",
+    "eslint-config-next": "12.2.5",
+    "typescript": "4.8.2"
+  }
+}
