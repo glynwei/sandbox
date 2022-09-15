@@ -16,8 +16,8 @@ jobs:
       ## grab the FDL file for the commit
       - run: |
           wget --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          https://raw.githubusercontent.com/GITHUB_OWNER/GITHUB_REPO/${{ github.sha }}/getting-started/causal.fdl -O /tmp/causal.fdl
+          https://raw.githubusercontent.com/CausalLabs/sandbox/${{ github.sha }}/getting-started/causal.fdl -O /tmp/causal.fdl
       ## push the FDL file to Causal
       - run: |
           wget --content-on-error -O- --header='Content-Type:text/plain' --post-file /tmp/causal.fdl \
-          'https://tools.causallabs.io/fdlpush?token=${{ secrets.CAUSAL_TOKEN }}&env=ENV_ID'
+          'https://tools.causallabs.io/fdlpush?token=${{ secrets.CAUSAL_TOKEN }}&env=79f51299-1626-4f1f-ab6c-b7b40753f3af'
