@@ -5,25 +5,35 @@ import React, { useEffect, useReducer, useRef, useContext } from "react";
 ///////////////////////////////////////////////////////////////////////////////
 //#region  parameterized
 
+export interface WebRequest {
+   path: string;
+   referrer: string;
+   search: string;
+   title: string;
+   url: string;
+}
 
-/** Wraps a rating box that we can put on various product pages to collect ratings from our users
- *   */
-type RatingBoxWireOutputs = {
-  readonly callToAction: string;
+export interface EventContext {
+   request?: WebRequest;
+   anonymousId: string;
+   timeZone: string;
+}
+
+export enum AuthenticationMethod {
+    email = "email",
+    phone = "phone",
+    apple = "apple",
+    facebook = "facebook",
+    google = "google",
+}
+
+type UserRegistrationWireOutputs = {
   readonly _impressionId: string;
 }
 
-/** Wraps a rating box that we can put on various product pages to collect ratings from our users
- *   */
-export class RatingBox {
-    /** The product that we are collecting ratings for
-     *  Default: null
-     *   */
-    readonly product: string;
-    /** The text next to the stars that prompts the visitor to rate the product
-     *  Control: "Rate this product!"
-     *   */
-    readonly callToAction: string;
+export class UserRegistration {
+    /**  Default: null */
+    readonly context: EventContext;
 
     /** @internal */
     readonly _: {
@@ -36,49 +46,39 @@ export class RatingBox {
         impressionId: string;
     }
 
-    /** Occurs each time a rating is collected   
-    *  */
-    signalRating( { stars } 
-        : {  stars : number  } ) : void
+    signalRegistrationCompleted( { authenticationMethod, email, username } 
+        : {  authenticationMethod : AuthenticationMethod,   email : string,   username : string  } ) : void
     {
-      RatingBox.signalRating( this._.impression.userId, this._.impressionId, { stars, } );
+      UserRegistration.signalRegistrationCompleted( this._.impression.userId, this._.impressionId, { authenticationMethod, email, username, } );
     }
-    /** Occurs each time a rating is collected   
-      *  */
-    static signalRating( userId : UserIds, impressionId : string,  { stars } 
-        : {  stars : number  } ) : void
+    static signalRegistrationCompleted( userId : UserIds, impressionId : string,  { authenticationMethod, email, username } 
+        : {  authenticationMethod : AuthenticationMethod,   email : string,   username : string  } ) : void
     {
         const _data = { 
           id : userId,
-          feature: "RatingBox",
-          event: "Rating",
+          feature: "UserRegistration",
+          event: "RegistrationCompleted",
           impressionId: impressionId,
-          args: {  stars: stars  }
+          args: {  authenticationMethod: authenticationMethod,  email: email,  username: username  }
         };
       network.sendBeacon(_data);
     }
 
   constructor( 
     impression: ImpressionImpl, 
-    args: NonNullable<_WireArgs["RatingBox"]>, 
-    outputs: RatingBoxWireOutputs ) {
+    args: NonNullable<_WireArgs["UserRegistration"]>, 
+    outputs: UserRegistrationWireOutputs ) {
     this._ = {impression, impressionId: outputs._impressionId};
-    this.product = args.product;
-    if (outputs.callToAction !== undefined) {
-        this.callToAction = outputs.callToAction;
-    } else {
-        this.callToAction = "Rate this product!";    }
+    this.context = args.context;
   }
 }
-/** An empty feature to use only as a kill switch
- *   */
-type ProductInfoWireOutputs = {
+type OrderWireOutputs = {
   readonly _impressionId: string;
 }
 
-/** An empty feature to use only as a kill switch
- *   */
-export class ProductInfo {
+export class Order {
+    /**  Default: null */
+    readonly context: EventContext;
 
     /** @internal */
     readonly _: {
@@ -91,76 +91,85 @@ export class ProductInfo {
         impressionId: string;
     }
 
-
-  constructor( 
-    impression: ImpressionImpl, 
-    args: NonNullable<_WireArgs["ProductInfo"]>, 
-    outputs: ProductInfoWireOutputs ) {
-    this._ = {impression, impressionId: outputs._impressionId};
-  }
-}
-/** Another feature just for demonstration purposes
- *   */
-type Feature2WireOutputs = {
-  readonly exampleOutput: string;
-  readonly _impressionId: string;
-}
-
-/** Another feature just for demonstration purposes
- *   */
-export class Feature2 {
-    /** Example args
-     *  Default: null
-     *   */
-    readonly exampleArg: string;
-    /** Example output
-     *  Control: "Example output"
-     *   */
-    readonly exampleOutput: string;
-
-    /** @internal */
-    readonly _: {
-
-        /**
-        * when constructed from cache, this is the original impression
-        * otherwise it will be the the one associated with the fetch
-        */
-        impression: ImpressionImpl;
-        impressionId: string;
-    }
-
-    /** Example event   
-    *  */
-    signalExampleEvent( { data } 
-        : {  data : string  } ) : void
+    signalCheckoutStarted(): void
     {
-      Feature2.signalExampleEvent( this._.impression.userId, this._.impressionId, { data, } );
+      Order.signalCheckoutStarted( this._.impression.userId, this._.impressionId );
     }
-    /** Example event   
-      *  */
-    static signalExampleEvent( userId : UserIds, impressionId : string,  { data } 
-        : {  data : string  } ) : void
+    static signalCheckoutStarted(userId : UserIds, impressionId : string): void
     {
         const _data = { 
           id : userId,
-          feature: "Feature2",
-          event: "ExampleEvent",
+          feature: "Order",
+          event: "CheckoutStarted",
           impressionId: impressionId,
-          args: {  data: data  }
+          args: {  }
         };
       network.sendBeacon(_data);
     }
 
   constructor( 
     impression: ImpressionImpl, 
-    args: NonNullable<_WireArgs["Feature2"]>, 
-    outputs: Feature2WireOutputs ) {
+    args: NonNullable<_WireArgs["Order"]>, 
+    outputs: OrderWireOutputs ) {
     this._ = {impression, impressionId: outputs._impressionId};
-    this.exampleArg = args.exampleArg;
-    if (outputs.exampleOutput !== undefined) {
-        this.exampleOutput = outputs.exampleOutput;
-    } else {
-        this.exampleOutput = "Example output";    }
+    this.context = args.context;
+  }
+}
+type ProductCollectionWireOutputs = {
+  readonly _impressionId: string;
+}
+
+export class ProductCollection {
+    /**  Default: null */
+    readonly context: EventContext;
+    /**  Default: null */
+    readonly collectionId: string;
+    /**  Default: null */
+    readonly collectionType: string;
+    /**  Default: null */
+    readonly adTrackingId: string | undefined ;
+    /**  Default: null */
+    readonly position: number;
+
+    /** @internal */
+    readonly _: {
+
+        /**
+        * when constructed from cache, this is the original impression
+        * otherwise it will be the the one associated with the fetch
+        */
+        impression: ImpressionImpl;
+        impressionId: string;
+    }
+
+    signalProductClicked( { adTrackingId, position } 
+        : {  adTrackingId ?: string,   position : number  } ) : void
+    {
+      ProductCollection.signalProductClicked( this._.impression.userId, this._.impressionId, { adTrackingId, position, } );
+    }
+    static signalProductClicked( userId : UserIds, impressionId : string,  { adTrackingId, position } 
+        : {  adTrackingId ?: string,   position : number  } ) : void
+    {
+        const _data = { 
+          id : userId,
+          feature: "ProductCollection",
+          event: "ProductClicked",
+          impressionId: impressionId,
+          args: {  adTrackingId: adTrackingId,  position: position  }
+        };
+      network.sendBeacon(_data);
+    }
+
+  constructor( 
+    impression: ImpressionImpl, 
+    args: NonNullable<_WireArgs["ProductCollection"]>, 
+    outputs: ProductCollectionWireOutputs ) {
+    this._ = {impression, impressionId: outputs._impressionId};
+    this.context = args.context;
+    this.collectionId = args.collectionId;
+    this.collectionType = args.collectionType;
+    this.adTrackingId = args.adTrackingId;
+    this.position = args.position;
   }
 }
 
@@ -231,9 +240,9 @@ class ImpressionImpl implements Impression<FeatureNames> {
     }
   }
 
-  RatingBox?: RatingBox 
-  ProductInfo?: ProductInfo 
-  Feature2?: Feature2 
+  UserRegistration?: UserRegistration 
+  Order?: Order 
+  ProductCollection?: ProductCollection 
 
 }
 
@@ -247,21 +256,15 @@ class ImpressionImpl implements Impression<FeatureNames> {
  * @paramtype The feature to query for
  */
 export type QueryArgs<T extends FeatureNames> = 
-    /** Wraps a rating box that we can put on various product pages to collect ratings from our users
-     *   */
-    & ("RatingBox" extends T ?   
-      { RatingBox : 
-          {  product : string  } } : unknown ) 
-    /** An empty feature to use only as a kill switch
-     *   */
-    & ("ProductInfo" extends T ?   
-      { ProductInfo : 
-          { _ignore_forceExcessPropertyCheck?: undefined } } : unknown ) 
-    /** Another feature just for demonstration purposes
-     *   */
-    & ("Feature2" extends T ?   
-      { Feature2 : 
-          {  exampleArg : string  } } : unknown ) 
+    & ("UserRegistration" extends T ?   
+      { UserRegistration : 
+          {  context : EventContext  } } : unknown ) 
+    & ("Order" extends T ?   
+      { Order : 
+          {  context : EventContext  } } : unknown ) 
+    & ("ProductCollection" extends T ?   
+      { ProductCollection : 
+          {  context : EventContext,   collectionId : string,   collectionType : string,   adTrackingId ?: string,   position : number  } } : unknown ) 
 
       
 
@@ -278,12 +281,12 @@ export function createQuery<T extends FeatureNames>(
   const query = new Query<T>();
   const _args = args as unknown as QueryArgs<FeatureNames>; // cast needed for older versions of typescript
    
-  if (_args.RatingBox !== undefined)
-    query.getRatingBox(_args.RatingBox);
-  if (_args.ProductInfo !== undefined)
-    query.getProductInfo();
-  if (_args.Feature2 !== undefined)
-    query.getFeature2(_args.Feature2);
+  if (_args.UserRegistration !== undefined)
+    query.getUserRegistration(_args.UserRegistration);
+  if (_args.Order !== undefined)
+    query.getOrder(_args.Order);
+  if (_args.ProductCollection !== undefined)
+    query.getProductCollection(_args.ProductCollection);
   return query;
 }
 
@@ -296,27 +299,22 @@ export function createQuery<T extends FeatureNames>(
 *
 */
 export class Query<T extends FeatureNames>{
-    /** Wraps a rating box that we can put on various product pages to collect ratings from our users
-     *   */
-    getRatingBox( { product } 
-      : {  product : string  } )
-        : Query<T | "RatingBox"> {
-        this._.wireArgs['RatingBox'] = { product: product, }
+    getUserRegistration( { context } 
+      : {  context : EventContext  } )
+        : Query<T | "UserRegistration"> {
+        this._.wireArgs['UserRegistration'] = { context: context, }
         return this
     }
-    /** An empty feature to use only as a kill switch
-     *   */
-    getProductInfo()
-        : Query<T | "ProductInfo"> {
-        this._.wireArgs['ProductInfo'] = { }
+    getOrder( { context } 
+      : {  context : EventContext  } )
+        : Query<T | "Order"> {
+        this._.wireArgs['Order'] = { context: context, }
         return this
     }
-    /** Another feature just for demonstration purposes
-     *   */
-    getFeature2( { exampleArg } 
-      : {  exampleArg : string  } )
-        : Query<T | "Feature2"> {
-        this._.wireArgs['Feature2'] = { exampleArg: exampleArg, }
+    getProductCollection( { context, collectionId, collectionType, adTrackingId, position } 
+      : {  context : EventContext,   collectionId : string,   collectionType : string,   adTrackingId ?: string,   position : number  } )
+        : Query<T | "ProductCollection"> {
+        this._.wireArgs['ProductCollection'] = { context: context, collectionId: collectionId, collectionType: collectionType, adTrackingId: adTrackingId, position: position, }
         return this
     }
 
@@ -329,20 +327,26 @@ export class Query<T extends FeatureNames>{
  * Do not use - only exported for testing
  */
 export type _WireArgs = {
-    RatingBox?:  { 
-      product: string
+    UserRegistration?:  { 
+      context: EventContext
        },
-    ProductInfo?:       Record<string, never>,
-    Feature2?:  { 
-      exampleArg: string
+    Order?:  { 
+      context: EventContext
+       },
+    ProductCollection?:  { 
+      context: EventContext
+            collectionId: string
+            collectionType: string
+            adTrackingId?: string
+            position: number
        },
 
 };
 
 const featureNames = [
-    "RatingBox",
-    "ProductInfo",
-    "Feature2",
+    "UserRegistration",
+    "Order",
+    "ProductCollection",
 ] as const;
 
 type FeatureNames = typeof featureNames[number];
@@ -353,9 +357,9 @@ type FeatureNames = typeof featureNames[number];
  * Useful as an object to autocomplete off of.
  */
 export const allFeatureTypes = {
-    RatingBox,
-    ProductInfo,
-    Feature2,
+    UserRegistration,
+    Order,
+    ProductCollection,
     };
 
 /**
@@ -364,9 +368,9 @@ export const allFeatureTypes = {
  */
 export type _WireOutputs = {
     session?: SessionArgs;
-    RatingBox?:RatingBoxWireOutputs | "OFF";
-    ProductInfo?:ProductInfoWireOutputs | "OFF";
-    Feature2?:Feature2WireOutputs | "OFF";
+    UserRegistration?:UserRegistrationWireOutputs | "OFF";
+    Order?:OrderWireOutputs | "OFF";
+    ProductCollection?:ProductCollectionWireOutputs | "OFF";
 }
 
 type UserIds = {
@@ -390,9 +394,9 @@ function getCausalHeaders( s : Partial<SessionArgs>): Record<string, string> {
 }
 
 type Impression<T extends FeatureNames> =
-    & ("RatingBox" extends T ? { RatingBox?:RatingBox } : unknown)
-    & ("ProductInfo" extends T ? { ProductInfo?:ProductInfo } : unknown)
-    & ("Feature2" extends T ? { Feature2?:Feature2 } : unknown)
+    & ("UserRegistration" extends T ? { UserRegistration?:UserRegistration } : unknown)
+    & ("Order" extends T ? { Order?:Order } : unknown)
+    & ("ProductCollection" extends T ? { ProductCollection?:ProductCollection } : unknown)
     & { userId: UserIds }
     & { toJSON(): ImpressionJSON<T> }
     & { _: {json: ImpressionJSON<T>} }
@@ -404,25 +408,25 @@ type Impression<T extends FeatureNames> =
  * Do not use - only exported for testing
  */
 export type _WireFlags = {
-    RatingBox: boolean;
-    ProductInfo: boolean;
-    Feature2: boolean;
+    UserRegistration: boolean;
+    Order: boolean;
+    ProductCollection: boolean;
 
 };
 
 type Flags<T extends FeatureNames> = 
-    & ("RatingBox" extends T ? { RatingBox: boolean } : unknown )
-    & ("ProductInfo" extends T ? { ProductInfo: boolean } : unknown )
-    & ("Feature2" extends T ? { Feature2: boolean } : unknown )
+    & ("UserRegistration" extends T ? { UserRegistration: boolean } : unknown )
+    & ("Order" extends T ? { Order: boolean } : unknown )
+    & ("ProductCollection" extends T ? { ProductCollection: boolean } : unknown )
 
 
 /**
  * The state of the feature flags when the FDL was compiled to this file.
  */
 export const defaultFlags: Flags<FeatureNames> = {
-    RatingBox: true,
-    ProductInfo: true,
-    Feature2: true,
+    UserRegistration: true,
+    Order: true,
+    ProductCollection: true,
 };
 
 export class Session {

@@ -1,0 +1,194 @@
+drop table if exists experiment;
+----
+create external table experiment (
+  experiment_id string,
+  name string,
+  description string,
+  state string,
+  start_ts timestamp,
+  finish_ts timestamp,
+  main_metric_id string,
+  audience_id string,
+  rolled_out_ts timestamp,
+  rolled_out_variant_id string
+) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+  location 's3://causal-sandbox/tables/experiment/';
+----
+drop table if exists variant;
+----
+create external table variant (
+  experiment_id string,
+  variant_id string,
+  name string
+) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+  location 's3://causal-sandbox/tables/variant/';
+----
+drop table if exists variant_value;
+----
+create external table variant_value (
+  experiment_id string,
+  variant_id string,
+  feature_name string,
+  field_name string,
+  value string
+) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+  location 's3://causal-sandbox/tables/variant_value/';
+----
+drop table if exists audience;
+----
+create external table audience (
+  audience_id string,
+  name string,
+  description string,
+  state string,
+  last_changed_by string,
+  last_changed_ts timestamp,
+  definition string
+) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+  location 's3://causal-sandbox/tables/audience/';
+----
+drop table if exists metric;
+----
+create external table metric (
+  metric_id string,
+  metric_name string,
+  state string,
+  metric_description string,
+  metric_def string
+) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+  location 's3://causal-sandbox/tables/metric/';
+
+----
+drop table if exists session;
+----
+create external table session(
+  device_id string
+  ,session_id string
+  ,start_time timestamp
+  ,last_modified_time timestamp
+  ,ip_address string
+  ,user_agent string
+  ,entry_url string
+  ,variants array<string>
+)
+comment 'table generated to represent Causal session'
+PARTITIONED BY ( 
+  ds string, 
+  hh string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde' 
+WITH SERDEPROPERTIES ( 
+  'orc.column.index.access'='false')
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+LOCATION
+  's3://causal-sandbox/tables/session/';
+
+
+----
+alter table session add 
+   partition (ds='2022-06-14', hh='20') location 's3://causal-sandbox/tables/session/ds=2022-06-14/hh=20'
+   partition (ds='2022-06-14', hh='21') location 's3://causal-sandbox/tables/session/ds=2022-06-14/hh=21'
+   partition (ds='2022-06-15', hh='19') location 's3://causal-sandbox/tables/session/ds=2022-06-15/hh=19'
+   partition (ds='2022-06-23', hh='17') location 's3://causal-sandbox/tables/session/ds=2022-06-23/hh=17'
+   partition (ds='2022-07-27', hh='21') location 's3://causal-sandbox/tables/session/ds=2022-07-27/hh=21'
+   partition (ds='2022-07-27', hh='22') location 's3://causal-sandbox/tables/session/ds=2022-07-27/hh=22'
+   partition (ds='2022-07-28', hh='00') location 's3://causal-sandbox/tables/session/ds=2022-07-28/hh=00'
+   partition (ds='2022-07-28', hh='17') location 's3://causal-sandbox/tables/session/ds=2022-07-28/hh=17'
+   partition (ds='2022-07-28', hh='18') location 's3://causal-sandbox/tables/session/ds=2022-07-28/hh=18'
+   partition (ds='2022-09-13', hh='00') location 's3://causal-sandbox/tables/session/ds=2022-09-13/hh=00'
+   partition (ds='2022-09-13', hh='01') location 's3://causal-sandbox/tables/session/ds=2022-09-13/hh=01'
+   partition (ds='2022-09-13', hh='02') location 's3://causal-sandbox/tables/session/ds=2022-09-13/hh=02'
+   partition (ds='2022-09-13', hh='03') location 's3://causal-sandbox/tables/session/ds=2022-09-13/hh=03'
+   partition (ds='2022-09-13', hh='22') location 's3://causal-sandbox/tables/session/ds=2022-09-13/hh=22'
+   partition (ds='2022-09-15', hh='00') location 's3://causal-sandbox/tables/session/ds=2022-09-15/hh=00'
+   partition (ds='2022-09-15', hh='21') location 's3://causal-sandbox/tables/session/ds=2022-09-15/hh=21'
+;
+
+
+----
+drop table if exists user_registration;
+----
+create external table user_registration(
+  session_id string
+  ,impression_ids array<string>
+  ,first_time timestamp
+  ,impression_count bigint
+  ,context struct<request:struct<path:string,referrer:string,search:string,title:string,url:string>,anonymousId:string,timeZone:string>
+  ,registration_completed array<struct<event_time:timestamp,impression_id:string,authentication_method:string,email:string,username:string>>
+)
+comment 'impression table for the Causal UserRegistration feature'
+PARTITIONED BY ( 
+  ds string, 
+  hh string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde' 
+WITH SERDEPROPERTIES ( 
+  'orc.column.index.access'='false') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+LOCATION
+  's3://causal-sandbox/tables/user_registration/';
+
+----
+drop table if exists order;
+----
+create external table order(
+  session_id string
+  ,impression_ids array<string>
+  ,first_time timestamp
+  ,impression_count bigint
+  ,context struct<request:struct<path:string,referrer:string,search:string,title:string,url:string>,anonymousId:string,timeZone:string>
+  ,checkout_started array<struct<event_time:timestamp,impression_id:string>>
+)
+comment 'impression table for the Causal Order feature'
+PARTITIONED BY ( 
+  ds string, 
+  hh string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde' 
+WITH SERDEPROPERTIES ( 
+  'orc.column.index.access'='false') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+LOCATION
+  's3://causal-sandbox/tables/order/';
+
+----
+drop table if exists product_collection;
+----
+create external table product_collection(
+  session_id string
+  ,impression_ids array<string>
+  ,first_time timestamp
+  ,impression_count bigint
+  ,context struct<request:struct<path:string,referrer:string,search:string,title:string,url:string>,anonymousId:string,timeZone:string>
+  ,collection_id string
+  ,collection_type string
+  ,ad_tracking_id string
+  ,position bigint
+  ,product_clicked array<struct<event_time:timestamp,impression_id:string,ad_tracking_id:string,position:bigint>>
+)
+comment 'impression table for the Causal ProductCollection feature'
+PARTITIONED BY ( 
+  ds string, 
+  hh string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde' 
+WITH SERDEPROPERTIES ( 
+  'orc.column.index.access'='false') 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+LOCATION
+  's3://causal-sandbox/tables/product_collection/';
+
+
+

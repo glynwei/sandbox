@@ -1,44 +1,55 @@
+type WebRequest {
+    path: String!,
+    referrer: String!,
+    search: String!,
+    title: String!,
+    url: String!,
+}
+type EventContext {
+    request: WebRequest
+    anonymousId: String!
+    timeZone: String!
+}
 
-"""
-Wraps a rating box that we can put on various product pages
-to collect ratings from our users
-"""
-feature RatingBox {
+enum AuthenticationMethod {
+    email
+    phone
+    apple
+    facebook
+    google
+}
+
+feature UserRegistration {
     args {
-        "The product that we are collecting ratings for"
-        product: String!
+        context: EventContext!
     }
-    
-    output {
-        "The text next to the stars that prompts the visitor to rate the product"
-        callToAction: String! = "Rate this product!"
-    }
-
-    "Occurs each time a rating is collected"
-    event Rating {
-        stars: Int! 
+    event RegistrationCompleted {
+        authenticationMethod: AuthenticationMethod!,	
+        email: String!,	
+        username: String!,
     }
 }
 
-"An empty feature to use only as a kill switch"
-feature ProductInfo {}
-
-"""
-Another feature just for demonstration purposes
-"""
-feature Feature2 {
+feature Order {
     args {
-        "Example args"
-        exampleArg: String!
-    }
-    
-    output {
-        "Example output"
-        exampleOutput: String! = "Example output"
+        context: EventContext!
     }
 
-    "Example event"
-    event ExampleEvent {
-        data: String! 
+    event CheckoutStarted {
+    }
+}
+
+feature ProductCollection {
+    args {
+        context: EventContext!
+        collectionId: String!
+        collectionType: String!
+        adTrackingId: String,
+        position: Int!
+    }
+
+    event ProductClicked {
+        adTrackingId: String,
+        position:  Int!
     }
 }
